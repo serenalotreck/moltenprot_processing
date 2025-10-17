@@ -3,7 +3,7 @@ Clip Moltenprot data.
 
 Author: Serena G. Lotreck
 """
-import argpase
+import argparse
 from os.path import abspath
 from tqdm import tqdm
 import pandas as pd
@@ -106,9 +106,9 @@ def cut_curve_w_deviation(index, curve, first_der):
     return index[:cut_point + 1], curve[:cut_point + 1], first_der[:cut_point + 1]
 
 
-def clip_and_plot():
+def clip_and_plot(moltenprot_dfs, outloc, outprefix):
     """
-    Clip curves and plot results, 
+    Clip curves and plot results, dataframes are modified in place.
     """
     ratio_df = moltenprot_dfs['Ratio']
     ratio_1st_der = moltenprot_dfs['Ratio (1st deriv.)']
@@ -122,10 +122,18 @@ def clip_and_plot():
     
         ax.set_title(col[1])
         index_cut, curve_cut, first_der_cut = cut_curve_w_deviation(ratio_1st_der.index.tolist(), ratio_df[col].tolist(), ratio_1st_der[colder].tolist())
-        ## TODO add code to adjust the columns in the df (replace cut data with nan)
+
+        # Cut the dataframe columns
+        ratio_df.loc[~ratio_df.index.isin(index_cut), col] = np.nan
+        ratio_1st_der.loc[~ratio_1st_der.index.isin(index_cut), colder] = np.nan
+        
         ax.scatter(index_cut, first_der_cut, c=np.array(first_der_cut) > 0, label='First derivative')
         ax1 = ax.twinx()
         ax1.scatter(index_cut, curve_cut, color='blue', label='Ratio')
+
+    plt.savefig(f'{outloc}/{outprefix}_cut_plot.png', format='png', bbox_inches='tight', dpi=300)
+    
+    print(f'Saved clipped plot to: {outloc}/{outprefix}_cut_plot.png')
 
     
 def main(prometheus_xlsx, outloc, outprefix):
@@ -140,7 +148,15 @@ def main(prometheus_xlsx, outloc, outprefix):
 
     # Clip the data
     print('\nClipping data...')
-    clip_and_plot()
+    clip_and_plot(moltenprot_dfs, outloc, outprefix)
+
+    # Save out the updated dfs
+    print('\nSaving out the clipped spreadsheet...')
+    with pd.ExcelWriter(f'{outloc}/{outprefix}_clipped_moltenprot_curves.xlsx') as writer:
+        for k in moltenprot_dfs.keys():
+            moltenprot_dfs[k].to_excel(writer, sheet_name=k)
+
+    print('\nDone!')
 
 
 if __name__ == "__main__":
