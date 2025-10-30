@@ -8,3 +8,6 @@ An example of how to run this script from the `scripts` directory using the samp
 ```
 python clip_moltenprot.py ../data/02-07-2025_Prometheus-processed_data-unchanged.xlsx ../data/ 17Oct2025
 ```
+
+### A note about the assumptions used to clip curves
+I made several assumptions about the shape and sign of the first derivative while writing this code. While this works broadly across many different curves, it's very possible that it fails catastrophically on certain curves with odd behavior at the very beginning of the graph. Definitely make sure to look over the plots to catch tehse cases. If you find one, where the curve actually looks okay, you can simply open the resulting Excel and paste in the original data column over the clipped one.
